@@ -102,4 +102,51 @@ class MaestroController extends Controller
 
         return back()->with('success', 'Asistencia registrada correctamente.');
     }
+
+    /**
+     * Guarda la asistencia de TODOS los alumnos de una clase en un solo envío.
+     * También actualiza el avance de los alumnos que asistieron.
+     */
+    public function guardarClase(Request $request)
+    {
+        $request->validate([
+            'schedule_id' => 'required|exists:schedules,id',
+            'class_date'  => 'required|date',
+            'lesson_id'   => 'required|exists:lessons,id',
+            'attendance'  => 'required|array',
+        ]);
+
+        $schedule = Schedule::with('course')->findOrFail($request->schedule_id);
+
+        foreach ($request->attendance as $registrationId => $attended) {
+            $registration = ClassRegistration::with('user')
+                ->where('id', $registrationId)
+                ->where('schedule_id', $request->schedule_id)
+                ->where('class_date', $request->class_date)
+                ->firstOrFail();
+
+            Attendance::updateOrCreate(
+                [
+                    'class_registration_id' => $registration->id,
+                    'user_id'               => $registration->user_id,
+                    'schedule_id'           => $registration->schedule_id,
+                    'class_date'            => $registration->class_date,
+                ],
+                [
+                    'lesson_id' => $request->lesson_id,
+                    'attended'  => (bool) $attended,
+                    'notes'     => $request->input("notes.{$registrationId}"),
+                ]
+            );
+
+            if ((bool) $attended) {
+                $registration->user->courses()->updateExistingPivot(
+                    $schedule->course_id,
+                    ['current_lesson' => $request->lesson_id]
+                );
+            }
+        }
+
+        return back()->with('success', 'Asistencia guardada correctamente para todos los alumnos.');
+    }
 }

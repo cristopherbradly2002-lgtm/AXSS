@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClassRegistration;
+use App\Models\Course;
 use App\Models\Schedule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -36,14 +37,112 @@ class AlumnoController extends Controller
     }
 
     /**
-     * Muestra los horarios disponibles para un curso en formato calendario.
+     * Muestra el detalle de un curso: progreso, temario y salones disponibles.
      */
-    public function horarios($courseId)
+    public function detalleCurso($courseId)
     {
+        $user   = Auth::user();
+        $course = Course::with('lessons')->findOrFail($courseId);
+
+        // Verifica que el alumno esté inscrito en este curso
+        $pivot = $user->courses()->where('course_id', $courseId)->first();
+        abort_if(!$pivot, 403);
+
+        $currentLesson  = $pivot->pivot->current_lesson;
+        $totalLessons   = $course->lessons->count();
+        $remaining      = max(0, $totalLessons - $currentLesson);
+        $progressPercent = $totalLessons > 0
+            ? round(($currentLesson / $totalLessons) * 100, 1)
+            : 0;
+
+        // Salones y horarios enriquecidos (misma lógica que horarios())
+        $dayMap = [
+            'Lunes'     => Carbon::MONDAY,
+            'Martes'    => Carbon::TUESDAY,
+            'Miércoles' => Carbon::WEDNESDAY,
+            'Jueves'    => Carbon::THURSDAY,
+            'Viernes'   => Carbon::FRIDAY,
+            'Sábado'    => Carbon::SATURDAY,
+            'Domingo'   => Carbon::SUNDAY,
+        ];
+
         $schedules = Schedule::where('course_id', $courseId)
             ->where('active', true)
             ->with(['classroom', 'teacher'])
-            ->get();
+            ->get()
+            ->map(function ($schedule) use ($dayMap) {
+                $dayNumber = $dayMap[$schedule->day_of_week] ?? Carbon::MONDAY;
+                $now       = Carbon::now();
+                $nextDate  = $now->copy()->next($dayNumber);
+
+                $classDateTime = Carbon::parse($nextDate->format('Y-m-d') . ' ' . $schedule->start_time);
+                if ($classDateTime->diffInHours($now, false) > -24) {
+                    $nextDate      = $nextDate->addWeek();
+                }
+
+                $registeredCount = ClassRegistration::where('schedule_id', $schedule->id)
+                    ->where('class_date', $nextDate->format('Y-m-d'))
+                    ->where('status', 'registered')
+                    ->count();
+
+                $schedule->next_date        = $nextDate->format('Y-m-d');
+                $schedule->registered_count = $registeredCount;
+                $schedule->available        = $registeredCount < $schedule->classroom->capacity;
+
+                return $schedule;
+            });
+
+        return view('alumno.detalle-curso', compact(
+            'course', 'currentLesson', 'totalLessons', 'remaining',
+            'progressPercent', 'schedules'
+        ));
+    }
+
+    /**
+     * Muestra los horarios disponibles para un curso en formato calendario.
+     * Enriquece cada horario con la próxima fecha disponible y conteo de cupo.
+     */
+    public function horarios($courseId)
+    {
+        $dayMap = [
+            'Lunes'     => Carbon::MONDAY,
+            'Martes'    => Carbon::TUESDAY,
+            'Miércoles' => Carbon::WEDNESDAY,
+            'Jueves'    => Carbon::THURSDAY,
+            'Viernes'   => Carbon::FRIDAY,
+            'Sábado'    => Carbon::SATURDAY,
+            'Domingo'   => Carbon::SUNDAY,
+        ];
+
+        $schedules = Schedule::where('course_id', $courseId)
+            ->where('active', true)
+            ->with(['classroom', 'teacher'])
+            ->get()
+            ->map(function ($schedule) use ($dayMap) {
+                $dayNumber = $dayMap[$schedule->day_of_week] ?? Carbon::MONDAY;
+                $now       = Carbon::now();
+
+                // Próxima ocurrencia del día de la semana
+                $nextDate = $now->copy()->next($dayNumber);
+
+                // Si esa ocurrencia no cumple la regla de 24 horas, avanzar una semana
+                $classDateTime = Carbon::parse($nextDate->format('Y-m-d') . ' ' . $schedule->start_time);
+                if ($classDateTime->diffInHours($now, false) > -24) {
+                    $nextDate      = $nextDate->addWeek();
+                    $classDateTime = Carbon::parse($nextDate->format('Y-m-d') . ' ' . $schedule->start_time);
+                }
+
+                $registeredCount = ClassRegistration::where('schedule_id', $schedule->id)
+                    ->where('class_date', $nextDate->format('Y-m-d'))
+                    ->where('status', 'registered')
+                    ->count();
+
+                $schedule->next_date       = $nextDate->format('Y-m-d');
+                $schedule->registered_count = $registeredCount;
+                $schedule->available        = $registeredCount < $schedule->classroom->capacity;
+
+                return $schedule;
+            });
 
         return view('alumno.horarios', compact('schedules', 'courseId'));
     }
@@ -112,6 +211,6 @@ class AlumnoController extends Controller
             'status'      => 'registered',
         ]);
 
-        return back()->with('success', 'Te has registrado exitosamente en la clase.');
+        return back()->with('success', 'El usuario se ha inscrito a la clase correctamente.');
     }
 }
