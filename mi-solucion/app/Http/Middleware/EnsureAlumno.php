@@ -11,7 +11,7 @@ class EnsureAlumno
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check() || !Auth::user()->isAlumno()) {
+        if (!Auth::check() || (!Auth::user()->isAlumno() && !Auth::user()->isAdmin())) {
             return redirect()->route('login');
         }
 

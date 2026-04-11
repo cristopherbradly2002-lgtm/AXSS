@@ -59,11 +59,15 @@
                     </div>
                 </div>
 
-                {{-- Footer button --}}
-                <div class="px-5 pb-4">
+                {{-- Footer buttons --}}
+                <div class="px-5 pb-4 flex gap-2">
                     <a href="{{ route('alumno.detalle-curso', $course->id) }}"
-                        class="block w-full text-center bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-semibold py-2.5 rounded-lg text-sm transition">
+                        class="flex-1 text-center bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-semibold py-2.5 rounded-lg text-sm transition">
                         Detalles
+                    </a>
+                    <a href="{{ route('alumno.tomar-asistencia') }}"
+                        class="flex-1 text-center bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+                        Tomar asistencia
                     </a>
                 </div>
             </div>

@@ -9,13 +9,17 @@ class Attendance extends Model
     protected $fillable = [
         'class_registration_id', 'user_id', 'lesson_id',
         'schedule_id', 'class_date', 'attended', 'notes',
+        'marked_via', 'marked_by', 'marked_at', 'marked_at_tz',
     ];
 
     protected function casts(): array
     {
         return [
-            'class_date' => 'date',
-            'attended' => 'boolean',
+            'class_date'  => 'date',
+            'attended'    => 'boolean',
+            'marked_by'   => 'integer',
+            'marked_at'   => 'datetime',
+            'marked_at_tz' => 'string',
         ];
     }
 

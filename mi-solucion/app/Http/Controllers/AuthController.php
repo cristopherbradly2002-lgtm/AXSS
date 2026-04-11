@@ -10,11 +10,7 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return redirect(
-                Auth::user()->isMaestro()
-                    ? route('maestro.dashboard')
-                    : route('alumno.mis-cursos')
-            );
+            return redirect($this->dashboardUrl());
         }
 
         return view('auth.login');
@@ -29,12 +25,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-
-            return redirect(
-                Auth::user()->isMaestro()
-                    ? route('maestro.dashboard')
-                    : route('alumno.mis-cursos')
-            );
+            return redirect($this->dashboardUrl());
         }
 
         return back()
@@ -50,5 +41,14 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    private function dashboardUrl(): string
+    {
+        return match (Auth::user()->role) {
+            'admin'   => route('admin.dashboard'),
+            'maestro' => route('maestro.dashboard'),
+            default   => route('alumno.mis-cursos'),
+        };
     }
 }

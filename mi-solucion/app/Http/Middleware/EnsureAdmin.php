@@ -7,11 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureMaestro
+class EnsureAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check() || (!Auth::user()->isMaestro() && !Auth::user()->isAdmin())) {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
             return redirect()->route('login');
         }
 

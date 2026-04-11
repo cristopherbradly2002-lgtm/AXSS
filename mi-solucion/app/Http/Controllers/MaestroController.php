@@ -58,9 +58,23 @@ class MaestroController extends Controller
                 return $registration;
             });
 
+        // Cargar asistencias existentes para la fecha para ordenar y mostrar estado
+        $attendanceMap = Attendance::where('schedule_id', $scheduleId)
+            ->whereDate('class_date', $classDate)
+            ->latest('updated_at')
+            ->get()
+            ->unique('class_registration_id')
+            ->keyBy('class_registration_id');
+
+        // Ordenar: presentes primeros
+        $registrations = $registrations->sortByDesc(function ($r) use ($attendanceMap) {
+            $a = $attendanceMap->get($r->id);
+            return $a ? (int) $a->attended : 0;
+        })->values();
+
         $lessons = $schedule->course->lessons;
 
-        return view('maestro.lista-alumnos', compact('schedule', 'registrations', 'lessons', 'classDate'));
+        return view('maestro.lista-alumnos', compact('schedule', 'registrations', 'lessons', 'classDate', 'attendanceMap'));
     }
 
     /**
@@ -89,6 +103,10 @@ class MaestroController extends Controller
                 'lesson_id' => $request->lesson_id,
                 'attended'  => $request->attended,
                 'notes'     => $request->notes,
+                'marked_via' => 'manual',
+                'marked_by' => Auth::id(),
+                'marked_at' => \Carbon\Carbon::now(),
+                'marked_at_tz' => config('app.timezone'),
             ]
         );
 
@@ -136,6 +154,10 @@ class MaestroController extends Controller
                     'lesson_id' => $request->lesson_id,
                     'attended'  => (bool) $attended,
                     'notes'     => $request->input("notes.{$registrationId}"),
+                    'marked_via' => 'manual',
+                    'marked_by' => Auth::id(),
+                    'marked_at' => \Carbon\Carbon::now(),
+                    'marked_at_tz' => config('app.timezone'),
                 ]
             );
 

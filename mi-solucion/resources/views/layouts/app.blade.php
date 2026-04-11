@@ -12,13 +12,37 @@
     {{-- Navbar --}}
     <nav class="bg-blue-900 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-            <div class="flex items-center gap-3">
-                <span class="text-yellow-400 font-extrabold text-xl tracking-widest">AXSS</span>
+            <div class="flex items-center gap-4">
+                <a href="/" class="text-yellow-400 font-extrabold text-xl tracking-widest">AXSS</a>
+                @auth
+                    @if(Auth::user()->isAdmin())
+                        <div class="hidden sm:flex items-center gap-2 text-sm">
+                            <a href="{{ route('admin.dashboard') }}" class="text-white/80 hover:text-white transition">Panel</a>
+                            <span class="text-white/30">|</span>
+                            <a href="{{ route('admin.users') }}" class="text-white/80 hover:text-white transition">Usuarios</a>
+                            <span class="text-white/30">|</span>
+                            <a href="{{ route('admin.courses') }}" class="text-white/80 hover:text-white transition">Cursos</a>
+                            <span class="text-white/30">|</span>
+                            <a href="{{ route('admin.classrooms') }}" class="text-white/80 hover:text-white transition">Salones</a>
+                            <span class="text-white/30">|</span>
+                            <a href="{{ route('admin.schedules') }}" class="text-white/80 hover:text-white transition">Horarios</a>
+                            <span class="text-white/30">|</span>
+                            <a href="{{ route('admin.attendance-report') }}" class="text-white/80 hover:text-white transition">Asistencia</a>
+                        </div>
+                    @endif
+                @endauth
             </div>
             <div class="flex items-center gap-4">
                 <span class="text-white/80 text-sm hidden sm:block">
                     {{ Auth::user()->name }}
-                    <span class="ml-1 text-xs bg-blue-700 text-yellow-300 px-2 py-0.5 rounded-full uppercase font-semibold">
+                    @php
+                        $roleBg = match(Auth::user()->role) {
+                            'admin' => 'bg-red-600 text-white',
+                            'maestro' => 'bg-blue-700 text-yellow-300',
+                            default => 'bg-green-700 text-white',
+                        };
+                    @endphp
+                    <span class="ml-1 text-xs {{ $roleBg }} px-2 py-0.5 rounded-full uppercase font-semibold">
                         {{ Auth::user()->role }}
                     </span>
                 </span>
@@ -32,6 +56,14 @@
             </div>
         </div>
     </nav>
+
+    {{-- Impersonation banner --}}
+    @if(session('admin_impersonator_id'))
+        <div class="bg-yellow-400 text-blue-900 text-center text-sm font-bold py-2">
+            Estás viendo como <strong>{{ Auth::user()->name }}</strong> ({{ Auth::user()->role }}).
+            <a href="{{ url('admin/stop-impersonate') }}" class="underline ml-2 hover:text-blue-700">Volver a Admin</a>
+        </div>
+    @endif
 
     {{-- Flash messages --}}
     <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-4">
@@ -64,6 +96,9 @@
     <footer class="bg-blue-900 text-white/50 text-center text-xs py-3 mt-auto">
         © {{ date('Y') }} AXSS. Todos los derechos reservados.
     </footer>
+
+    {{-- Scripts stack for pages --}}
+    @stack('scripts')
 
 </body>
 </html>

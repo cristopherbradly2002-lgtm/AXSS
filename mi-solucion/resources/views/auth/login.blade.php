@@ -83,7 +83,12 @@
             {{-- Roles info --}}
             <div class="mt-6 border-t pt-5">
                 <p class="text-xs text-gray-500 text-center font-medium mb-3">Cuentas de prueba</p>
-                <div class="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                <div class="grid grid-cols-3 gap-3 text-xs text-gray-600">
+                    <div class="bg-red-50 rounded-lg p-3">
+                        <p class="font-semibold text-red-800 mb-1">🛡️ Admin</p>
+                        <p>admin@axss.edu</p>
+                        <p class="text-gray-400">password</p>
+                    </div>
                     <div class="bg-blue-50 rounded-lg p-3">
                         <p class="font-semibold text-blue-800 mb-1">👨‍🏫 Maestro</p>
                         <p>maestro@axss.edu</p>
