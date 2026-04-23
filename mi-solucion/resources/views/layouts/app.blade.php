@@ -61,7 +61,7 @@
     @if(session('admin_impersonator_id'))
         <div class="bg-yellow-400 text-blue-900 text-center text-sm font-bold py-2">
             Estás viendo como <strong>{{ Auth::user()->name }}</strong> ({{ Auth::user()->role }}).
-            <a href="{{ url('admin/stop-impersonate') }}" class="underline ml-2 hover:text-blue-700">Volver a Admin</a>
+            <a href="{{ route('admin.stop-impersonate') }}" class="underline ml-2 hover:text-blue-700">Volver a Admin</a>
         </div>
     @endif
 

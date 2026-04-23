@@ -89,8 +89,9 @@ Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
 
     // Impersonate
     Route::get('/impersonate/{id}', [AdminController::class, 'impersonate'])->name('impersonate');
-    Route::get('/stop-impersonate', [AdminController::class, 'stopImpersonate'])->name('stop-impersonate');
 });
+
+Route::get('/admin/stop-impersonate', [AdminController::class, 'stopImpersonate'])->name('admin.stop-impersonate');
 
 // Ruta firmada para que el alumno marque asistencia al escanear el QR
 Route::get('/attendance/mark', [AttendanceController::class, 'markViaQr'])

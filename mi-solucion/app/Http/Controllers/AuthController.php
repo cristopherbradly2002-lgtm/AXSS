@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -35,6 +36,16 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $adminId = $request->session()->pull('admin_impersonator_id');
+
+        if ($adminId) {
+            Auth::login(User::findOrFail($adminId));
+            $request->session()->regenerate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('admin.dashboard');
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

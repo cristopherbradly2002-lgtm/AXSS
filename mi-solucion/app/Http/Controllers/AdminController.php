@@ -448,7 +448,11 @@ class AdminController extends Controller
         $adminId = session()->pull('admin_impersonator_id');
         if ($adminId) {
             Auth::login(User::findOrFail($adminId));
+            session()->regenerate();
+
+            return redirect()->route('admin.dashboard');
         }
-        return redirect()->route('admin.dashboard');
+
+        return redirect()->route('login');
     }
 }
